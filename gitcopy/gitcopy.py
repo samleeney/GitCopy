@@ -36,7 +36,14 @@ def main():
 
         # Initialize the output content
         output_content = []
-        output_content.append(f"Contents of repository {repo_name}:\n")
+        output_content.append(
+            "The following text is a Git repository with code. The structure of the text are "
+            "sections that begin with ----, followed by a single line containing the file "
+            "path and file name, followed by a variable amount of lines containing the file "
+            "contents. The text representing the Git repository ends when the symbols --END-- "
+            "are encountered. Any further text beyond --END-- are meant to be interpreted as "
+            "instructions using the aforementioned Git repository as context.\n"
+        )
 
         # Get the list of tracked files
         repo = Repo(temp_dir)
@@ -73,9 +80,12 @@ def main():
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    output_content.append(f"\n=== {rel_path} ===\n{content}")
+                    output_content.append(f"----\n{rel_path}\n{content}")
                 except Exception as e:
                     print(f"Could not read file {rel_path}: {e}", file=sys.stderr)
+
+        # End of the repository representation
+        output_content.append("--END--\n")
 
         # Combine the output content
         final_output = "\n".join(output_content)
