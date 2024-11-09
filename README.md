@@ -6,6 +6,7 @@
 
 ```bash
 pip install git+https://github.com/yourusername/GitCopy.git
+pip install -r requirements.txt
 ```
 
 ## Usage
