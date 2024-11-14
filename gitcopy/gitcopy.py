@@ -69,6 +69,7 @@ def main():
             ".kt",
             ".rs",
             ".ts",
+            ".lua"
         ]
 
         # Process each tracked file
