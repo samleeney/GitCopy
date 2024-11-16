@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -19,13 +20,16 @@ def main():
     parser.add_argument(
         "-y", "--yank", action="store_true", help="Copy the output to the clipboard"
     )
+    parser.add_argument(
+        "-e", "--edit", action="store_true", help="Open the output file in the editor"
+    )
     args = parser.parse_args()
 
     repo_url = args.repo_url
     yank = args.yank
+    edit = args.edit
 
     if repo_url == ".":
-        # Use the current directory as the repository root
         try:
             repo = Repo(os.getcwd(), search_parent_directories=True)
             temp_dir = repo.working_tree_dir
@@ -35,13 +39,11 @@ def main():
             )
             sys.exit(1)
         repo_name = os.path.basename(os.path.abspath(temp_dir))
-        cleanup = False  # No need to clean up the current directory
+        cleanup = False
     else:
-        # Create a temporary directory to clone the repo
         temp_dir = tempfile.mkdtemp()
         cleanup = True
         try:
-            # Clone the repository
             print(f"Cloning repository {repo_url}...")
             Repo.clone_from(repo_url, temp_dir)
             repo = Repo(temp_dir)
@@ -49,14 +51,12 @@ def main():
             print(f"Failed to clone repository {repo_url}: {e}", file=sys.stderr)
             shutil.rmtree(temp_dir)
             sys.exit(1)
-        # Get the repository name
         repo_name = os.path.basename(repo_url.rstrip("/"))
         if repo_name.endswith(".git"):
             repo_name = repo_name[:-4]
 
     output_filename = f"{repo_name}.md" if not yank else "output.md"
 
-    # Initialize the output content with the prompt
     prompt_text = (
         "The following text is a Git repository with code. The structure of the text are "
         "sections that begin with ----, followed by a single line containing the file "
@@ -67,13 +67,10 @@ def main():
     )
     output_content = [prompt_text]
 
-    # Get the list of tracked files
     tracked_files = repo.git.ls_files().split("\n")
 
-    # Process each tracked file
     for rel_path in tracked_files:
         file_path = os.path.join(temp_dir, rel_path)
-        # Read the content of the file
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -81,10 +78,8 @@ def main():
         except Exception as e:
             print(f"Could not read file {rel_path}: {e}", file=sys.stderr)
 
-    # Append --END-- to signify the end of the repository content
     output_content.append("--END--")
 
-    # Combine the output content
     final_output = "\n".join(output_content)
 
     if yank:
@@ -95,8 +90,14 @@ def main():
             f.write(final_output)
         print(f"Output written to {output_filename}")
 
+    if edit:
+        editor = os.getenv("EDITOR", "vim")
+        try:
+            subprocess.run([editor, output_filename])
+        except Exception as e:
+            print(f"Failed to open editor {editor}: {e}", file=sys.stderr)
+
     if cleanup:
-        # Clean up the temporary directory
         shutil.rmtree(temp_dir)
 
 

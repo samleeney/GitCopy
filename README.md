@@ -28,6 +28,13 @@ Copy the entire repository from the root directory or subdirectories:
 gitcopy .
 ```
 
+Open the output file in a text editor defined by the `$EDITOR` environment
+variable:
+
+```bash
+gitcopy <repository_url> -e
+```
+
 ## Example
 
 ```bash
