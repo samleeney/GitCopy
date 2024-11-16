@@ -1,15 +1,16 @@
 import argparse
 import os
-import tempfile
 import shutil
 import sys
-from git import Repo
+import tempfile
+
 import pyperclip
+from git import Repo
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Copy all scripts from a GitHub repository into a single text file."
+        description="Copy all scripts from a GitHub repository into a single markdown file."
     )
     parser.add_argument("repo_url", help="URL of the GitHub repository")
     parser.add_argument(
@@ -32,64 +33,55 @@ def main():
         if repo_name.endswith(".git"):
             repo_name = repo_name[:-4]
 
-        output_filename = f"{repo_name}.txt" if not yank else "output.txt"
+        output_filename = f"{repo_name}.md" if not yank else "output.md"
 
         # Initialize the output content
         output_content = []
-        output_content.append(
-            "The following text is a Git repository with code. The structure of the text are "
-            "sections that begin with ----, followed by a single line containing the file "
-            "path and file name, followed by a variable amount of lines containing the file "
-            "contents. The text representing the Git repository ends when the symbols --END-- "
-            "are encountered. Any further text beyond --END-- are meant to be interpreted as "
-            "instructions using the aforementioned Git repository as context.\n"
-        )
 
         # Get the list of tracked files
         repo = Repo(temp_dir)
         tracked_files = repo.git.ls_files().split("\n")
 
-        # Define script extensions
-        script_extensions = [
-            ".py",
-            ".sh",
-            ".bat",
-            ".js",
-            ".rb",
-            ".pl",
-            ".ps1",
-            ".php",
-            ".java",
-            ".c",
-            ".cpp",
-            ".h",
-            ".cs",
-            ".go",
-            ".swift",
-            ".kt",
-            ".rs",
-            ".ts",
-            ".lua"
-        ]
+        # Define script extensions and their corresponding languages
+        script_extensions = {
+            ".py": "python",
+            ".sh": "bash",
+            ".bat": "batch",
+            ".js": "javascript",
+            ".rb": "ruby",
+            ".pl": "perl",
+            ".ps1": "powershell",
+            ".php": "php",
+            ".java": "java",
+            ".c": "c",
+            ".cpp": "cpp",
+            ".h": "cpp",
+            ".cs": "csharp",
+            ".go": "go",
+            ".swift": "swift",
+            ".kt": "kotlin",
+            ".rs": "rust",
+            ".ts": "typescript",
+            ".lua": "lua",
+        }
 
         # Process each tracked file
         for rel_path in tracked_files:
             file_path = os.path.join(temp_dir, rel_path)
             _, ext = os.path.splitext(file_path)
             if ext.lower() in script_extensions:
+                language = script_extensions[ext.lower()]
                 # Read the content of the file
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    output_content.append(f"----\n{rel_path}\n{content}")
+                    output_content.append(f"### {rel_path}\n")
+                    output_content.append(f"```{language}\n{content}\n```")
                 except Exception as e:
                     print(f"Could not read file {rel_path}: {e}", file=sys.stderr)
 
-        # End of the repository representation
-        output_content.append("--END--\n")
-
         # Combine the output content
-        final_output = "\n".join(output_content)
+        final_output = "\n\n".join(output_content)
 
         if yank:
             pyperclip.copy(final_output)
