@@ -22,6 +22,12 @@ Copy the output directly to your clipboard:
 gitcopy <repository_url> -y
 ```
 
+Copy the entire repository from the root directory or subdirectories:
+
+```bash
+gitcopy .
+```
+
 ## Example
 
 ```bash
